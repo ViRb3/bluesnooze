@@ -9,6 +9,7 @@
 import Cocoa
 import IOBluetooth
 import LaunchAtLogin
+import CoreWLAN
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -17,7 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @IBOutlet weak var launchAtLoginMenuItem: NSMenuItem!
 
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private var prevState: Int32 = IOBluetoothPreferenceGetControllerPowerState()
+    private var prevBlueState: Int32 = IOBluetoothPreferenceGetControllerPowerState()
+    private var prevWifiState: Bool = CWWiFiClient.shared().interface()!.powerOn()
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         initStatusItem()
@@ -54,18 +56,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func onPowerDown(note: NSNotification) {
-        prevState = IOBluetoothPreferenceGetControllerPowerState()
+        prevBlueState = IOBluetoothPreferenceGetControllerPowerState()
         setBluetooth(powerOn: false)
+        prevWifiState = CWWiFiClient.shared().interface()!.powerOn()
+        setWifi(powerOn: false)
     }
 
     @objc func onPowerUp(note: NSNotification) {
-        if prevState != 0 {
+        if prevBlueState != 0 {
             setBluetooth(powerOn: true)
+        }
+        if prevWifiState {
+            setWifi(powerOn: true)
         }
     }
 
     private func setBluetooth(powerOn: Bool) {
         IOBluetoothPreferenceSetControllerPowerState(powerOn ? 1 : 0)
+    }
+
+    private func setWifi(powerOn: Bool) {
+        try! CWWiFiClient.shared().interface()!.setPower(powerOn)
     }
 
     // MARK: UI state
