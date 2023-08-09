@@ -75,7 +75,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setWifi(powerOn: Bool) {
-        try! CWWiFiClient.shared().interface()!.setPower(powerOn)
+        var tries = 0
+        while (tries < 10) {
+            do {
+                try CWWiFiClient.shared().interface()!.setPower(powerOn)
+                return
+            } catch {
+                tries += 1
+                usleep(100000)
+            }
+        }
     }
 
     // MARK: UI state
