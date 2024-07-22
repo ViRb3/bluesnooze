@@ -20,7 +20,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var prevBlueState: Int32 = IOBluetoothPreferenceGetControllerPowerState()
     private var prevWifiState: Bool = CWWiFiClient.shared().interface()!.powerOn()
-
+    private var isSleeping: Bool = false
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         initStatusItem()
         setLaunchAtLoginState()
@@ -55,6 +56,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func onPowerDown(note: NSNotification) {
+        if (isSleeping) {
+            return
+        }
+        isSleeping = true
         prevBlueState = IOBluetoothPreferenceGetControllerPowerState()
         setBluetooth(powerOn: false)
         prevWifiState = CWWiFiClient.shared().interface()!.powerOn()
@@ -62,6 +67,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func onPowerUp(note: Notification) {
+        if (!isSleeping) {
+            return
+        }
+        isSleeping = false
         if prevBlueState != 0 {
             setBluetooth(powerOn: true)
         }
